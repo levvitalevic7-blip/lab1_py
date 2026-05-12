@@ -19,10 +19,6 @@ from typing import Any
 
 BASE_DIR = Path(__file__).resolve().parent
 
-# Якщо комп'ютер слабкий і тест на 10^6 записів виконується довго,
-# можна запустити так:
-# Windows PowerShell: $env:FAST_TEST="1"; python lab1_solution.py
-# Linux / macOS: FAST_TEST=1 python lab1_solution.py
 FAST_TEST = os.getenv("FAST_TEST") == "1"
 BENCHMARK_SIZES = [10**2, 10**4, 10**5] if FAST_TEST else [10**2, 10**4, 10**6]
 
@@ -38,17 +34,13 @@ def read_text(filename: str) -> str:
 
 
 def load_variable_from_py(filename: str, variable_name: str) -> Any:
-    """Завантаження змінної з .py файлу, навіть якщо в імені файлу є дефіс."""
     data = runpy.run_path(str(BASE_DIR / filename))
     return data[variable_name]
 
 
-
-# ЧАСТИНА 1. БАЗОВИЙ РІВЕНЬ
-
+# Частина 1
 
 def tokenize_words(text: str) -> list[str]:
-    """Повертає слова без цифр, пунктуації та спецсимволів."""
     return re.findall(r"[^\W\d_]+", text.lower(), flags=re.UNICODE)
 
 
@@ -58,7 +50,6 @@ def task_1_1_text_cleaner() -> None:
     text = read_text("bath-livingston.txt")
     words = tokenize_words(text)
 
-    # Видаляємо артиклі a / the, але зберігаємо порядок і дублікати інших слів.
     cleaned_words = [word for word in words if word not in {"a", "the"}]
     unique_dictionary = set(cleaned_words)
 
@@ -71,7 +62,6 @@ def task_1_1_text_cleaner() -> None:
 
 
 def format_article(article: str) -> str:
-    """EL1005 -> EL-1005, DNF3761 -> DNF-3761."""
     return re.sub(r"^([A-Za-z]+)(\d+)$", r"\1-\2", article)
 
 
@@ -100,7 +90,6 @@ def task_1_2_assortment_analysis() -> None:
 
 
 def remove_duplicates_in_place(items: list[list[Any]]) -> None:
-    """Очищення списку від дублікатів in-place, без створення копії списку"""
     seen: set[tuple[Any, ...]] = set()
     index = 0
 
@@ -136,7 +125,6 @@ def analyze_language_units(text: str) -> dict[str, Any]:
     word_counter = Counter(words)
     bigram_counter = Counter(zip(words, words[1:]))
 
-    # беремо тільки літери, без пробілів, цифр і пунктуації
     char_counter = Counter(ch.lower() for ch in text if ch.isalpha())
 
     return {
@@ -172,8 +160,7 @@ def task_1_4_frequency_analysis() -> None:
     print_language_analysis("Російський текст", russian_analysis)
 
 
-# ЧАСТИНА 2. СЕРЕДНІЙ РІВЕНЬ
-
+# Частина 2
 
 def build_two_level_register(exam_results: list[tuple[str, str, int]]) -> dict[str, dict[str, int]]:
     register: dict[str, dict[str, int]] = {}
@@ -206,10 +193,6 @@ def make_rbac_checker(role_permissions: dict[str, set[str]]):
     cache: dict[frozenset[str], set[str]] = {}
 
     def get_permissions(user_roles: list[str]) -> tuple[set[str], bool]:
-        """
-        Повертає підсумкові права та ознаку, чи взято результат із кешу
-        Ключ кешу — frozenset,  порядок ролей не має значення
-        """
         cache_key = frozenset(user_roles)
 
         if cache_key in cache:
@@ -262,7 +245,6 @@ def vigenere_decrypt(cipher_text: str, key: str) -> str:
 
         shift = key_shifts[key[index % len(key)]]
 
-        # Використовуємо deque і rotate()
         shifted_alphabet = deque(alphabet)
         shifted_alphabet.rotate(-shift)
 
@@ -317,8 +299,7 @@ def task_2_4_xor() -> None:
     print(decoded_message)
 
 
-# ЧАСТИНА 3. ВИСОКИЙ РІВЕНЬ
-
+# Частина 3
 
 def get_similarity(storage: dict[Any, dict[Any, int]], user_a: Any, user_b: Any) -> float:
     profile_a = storage.get(user_a, {})
@@ -330,7 +311,6 @@ def get_similarity(storage: dict[Any, dict[Any, int]], user_a: Any, user_b: Any)
     if not profile_a or not profile_b:
         return 0.0
 
-    # Для ефективності ітеруємося за меншим профілем
     smaller, larger = (profile_a, profile_b) if len(profile_a) <= len(profile_b) else (profile_b, profile_a)
 
     dot_product = 0
@@ -394,7 +374,6 @@ def benchmark_similarity() -> None:
 
         print(f"{size:>22} | {elapsed:>12.6f} | {similarity:>10.4f}")
 
-        # Звільняємо пам'ять перед наступним тестом
         del profile_a, profile_b, storage
 
 
@@ -422,7 +401,6 @@ def task_3_1_recommendation_similarity() -> None:
 
 
 def tokenize_log_message(message: str) -> list[str]:
-    # Дозволяємо дефіс усередині токена, щоб auth-service не розпадався повністю
     return re.findall(r"[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*", message.lower())
 
 
@@ -458,7 +436,6 @@ def search_message_and(index: dict[str, set[int]], query: str) -> set[int]:
 
 
 def search_logs(all_logs: list[dict[str, Any]], indexes: dict[str, dict[Any, set[int]]], **filters: Any) -> list[dict[str, Any]]:
-    """Розумний пошук через перетин множин"""
     result_ids: set[int] | None = None
 
     for field_name, value in filters.items():
@@ -501,7 +478,6 @@ def generate_task9_data(num_logs: int = 1000000) -> list[dict[str, Any]]:
 
 
 def generate_trace_logs(num_logs: int) -> list[dict[str, Any]]:
-    """Мінімальні логи для тесту унікального trace_id"""
     return [{"id": i, "trace_id": f"TRC-{i:06d}"} for i in range(num_logs)]
 
 
@@ -521,8 +497,6 @@ def benchmark_trace_search() -> None:
         trace_index = build_unique_trace_index(logs)
 
         start_scan = time.perf_counter()
-        # Не зупиняємось на першому збігу, а переглядаємо весь список
-        # Так добре видно лінійну складність прямого перебору O(N)
         scan_result = [log["id"] for log in logs if log["trace_id"] == target_trace_id]
         scan_time = time.perf_counter() - start_scan
 
@@ -743,8 +717,7 @@ def task_3_3_recursive_diff() -> None:
     print("Тип результату після merge:", type(stress_merged).__name__)
 
 
-# ЗАПУСК УСІЄЇ ЛАБОРАТОРНОЇ
-
+# Запуск
 
 def main() -> None:
     print("Лабораторна робота №1. Типи даних Python")
